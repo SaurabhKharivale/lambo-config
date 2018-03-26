@@ -1,0 +1,68 @@
+#!/usr/bin/env bash
+
+# Remove bootstrap
+php artisan preset none
+php artisan preset vue
+
+# Update webpack mix configuration
+cp -R ~/.lambo/snippets/* $PROJECTPATH
+sed -i -e "s/browserSync()/browserSync('$PROJECTNAME.$TLD')/" webpack.mix.js
+
+# Add scripts to package.json for testing JS code
+jq --indent 4 '.scripts."js-test"="cross-env NODE_ENV=test mocha-webpack --webpack-config node_modules/laravel-mix/setup/webpack.config.js --require tests/Javascript/setup.js \"tests/Javascript/**/*.spec.js\""' $PROJECTPATH/package.json | jq --indent 4 '.scripts."js-watch"="cross-env NODE_ENV=test mocha-webpack --webpack-config node_modules/laravel-mix/setup/webpack.config.js --watch --require tests/Javascript/setup.js \"tests/Javascript/**/*.spec.js\""' > $PROJECTPATH/packages.json
+mv packages.json package.json
+
+# Install additional composer dependencies as you would from the command line.
+echo "
+***************************************************************
+${green}Installing additional composer dependencies${reset}
+***************************************************************
+"
+composer require barryvdh/laravel-debugbar wnx/laravel-stats --dev
+
+echo "
+***************************************************************
+${green}Installing additional npm dependencies${reset}
+***************************************************************
+"
+npm install
+npm install --save-dev vuex vue-router tailwindcss laravel-mix-tailwind expect jsdom jsdom-global mocha mocha-webpack moxios sinon @vue/test-utils webpack-node-externals
+
+echo "
+***************************************************************
+${green}Updating enviornment variables${reset}
+***************************************************************
+"
+# Add sqlite in-memory db config for testing
+sed -i -e '/sync/a\ \ \ \ \ \ \ \ <env name="DB_CONNECTION" value="sqlite"/>\n\ \ \ \ \ \ \ \ <env name="DB_DATABASE" value=":memory:"/>' phpunit.xml
+
+echo "
+***************************************************************
+${green}Creating tailwind config file${reset}
+***************************************************************
+"
+$PROJECTPATH/node_modules/.bin/tailwind init
+
+echo "
+***************************************************************
+${green}Building assets${reset}
+***************************************************************
+"
+echo "-----> ${green}Before${reset} <-----"
+cat $PROJECTPATH/resources/assets/js/bootstrap.js
+
+sed -i '3d;5d;6d;7d;8d;9d;10d;11d;12d;13d;14d;15d;16d' $PROJECTPATH/resources/assets/js/bootstrap.js
+
+echo "-----> ${green}After${reset} <-----"
+cat $PROJECTPATH/resources/assets/js/bootstrap.js
+
+echo "-----> ${green}Compiling assets${reset} <-----"
+npm run dev
+
+echo "
+***************************************************************
+${green}Finishing process with a commit${reset}
+***************************************************************
+"
+git add .
+git commit -m "Installed project dependencies."
