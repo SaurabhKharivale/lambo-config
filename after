@@ -9,8 +9,11 @@ cp -R ~/.lambo/snippets/* $PROJECTPATH
 sed -i -e "s/browserSync()/browserSync('$PROJECTNAME.$TLD')/" webpack.mix.js
 
 # Add scripts to package.json for testing JS code
-jq --indent 4 '.scripts."js-test"="cross-env NODE_ENV=test mocha-webpack --webpack-config node_modules/laravel-mix/setup/webpack.config.js --require tests/Javascript/setup.js \"tests/Javascript/**/*.spec.js\""' $PROJECTPATH/package.json | jq --indent 4 '.scripts."js-watch"="cross-env NODE_ENV=test mocha-webpack --webpack-config node_modules/laravel-mix/setup/webpack.config.js --watch --require tests/Javascript/setup.js \"tests/Javascript/**/*.spec.js\""' > $PROJECTPATH/packages.json
+jq --indent 4 '.scripts."test"="cross-env NODE_ENV=test mocha-webpack --webpack-config node_modules/laravel-mix/setup/webpack.config.js --require tests/Javascript/setup.js \"tests/Javascript/**/*.spec.js\""' $PROJECTPATH/package.json | jq --indent 4 '.scripts."watch-js"="cross-env NODE_ENV=test mocha-webpack --webpack-config node_modules/laravel-mix/setup/webpack.config.js --watch --require tests/Javascript/setup.js \"tests/Javascript/**/*.spec.js\""' > $PROJECTPATH/packages.json
 mv packages.json package.json
+
+# Enable browser sync while watching
+sed -i -e 's/npm run development -- --watch/cross-env BROWSER_SYNC=enabled npm run development -- --watch/' $PROJECTPATH/package.json
 
 # Install additional composer dependencies as you would from the command line.
 echo "
@@ -26,7 +29,7 @@ ${green}Installing additional npm dependencies${reset}
 ***************************************************************
 "
 npm install
-npm install --save-dev vuex vue-router tailwindcss laravel-mix-tailwind expect jsdom jsdom-global mocha mocha-webpack moxios sinon @vue/test-utils webpack-node-externals
+npm install --save-dev vuex vue-router tailwindcss laravel-mix-tailwind expect jsdom jsdom-global mocha mocha-webpack moxios sinon @vue/test-utils webpack-node-externals browser-sync browser-sync-webpack-plugin
 
 echo "
 ***************************************************************

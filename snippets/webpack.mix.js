@@ -1,5 +1,4 @@
 let mix = require('laravel-mix');
-let nodeExternals = require('webpack-node-externals');
 require('laravel-mix-tailwind');
 
 /*
@@ -25,7 +24,7 @@ let baseConfig = {
 if (process.env.NODE_ENV === 'test') {
     let config = baseConfig;
     config.devtool = 'inline-cheap-module-source-map';
-    config.externals = [nodeExternals()];
+    config.externals = [require('webpack-node-externals')()];
     mix.webpackConfig(config);
 } else {
     mix.webpackConfig(baseConfig);
@@ -33,10 +32,13 @@ if (process.env.NODE_ENV === 'test') {
 }
 
 mix.js('resources/assets/js/app.js', 'public/js')
-   .sass('resources/assets/sass/app.scss', 'public/css')
-   .tailwind()
-   .browserSync()
-   .disableNotifications();
+    .sass('resources/assets/sass/app.scss', 'public/css')
+    .tailwind()
+    .disableNotifications();
+
+if (process.env.BROWSER_SYNC === 'enabled') {
+    mix.browserSync('tailwind-kits.test');
+}
 
 if (mix.inProduction()) {
     mix.version();
